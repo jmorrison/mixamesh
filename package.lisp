@@ -2,8 +2,8 @@
 (in-package :cl-user)
 
 (defpackage :mixamesh
-  (:use (:iterate :cl-tuples)
-   :export (#:compilation 
+  (:use :cl :iterate :cl-tuples)
+  (:export #:compilation 
             #:deindex
             #:stripify
             #:decompilation 
@@ -11,7 +11,9 @@
             #:mesh              
             #:compiled-mesh
             #:make-mesh
-            #:*meshes*)))
+            #:*meshes*))
+
+(in-package :mixamesh)
 
 
 

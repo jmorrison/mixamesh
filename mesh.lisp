@@ -1,9 +1,11 @@
 
 (in-package :mixamesh)
 
-(defparameter *meshes* (make-hash-table))
+(defparameter *meshes* (make-hash-table :test 'equalp)
+  "A table of loaded meshes to use as brushes.")
 
-(make-package :mesh-names)
+(unless (find-package :mesh-names)
+  (make-package :mesh-names))
 
 (defclass mesh ()
   ((vertex-index-array :accessor vertex-indices-of :documentation "Indices of triangle vertices" :initarg nil)
@@ -219,24 +221,27 @@
         (maxz most-negative-single-float)
         (minz most-positive-single-float))
     (iterate
-      (for  index in-vertices (vertices-of self))      
-      ((cond
-         ((< x minx) (setf minx x))
-         ((> x maxx) (setf maxx x))
-         ((< y miny) (setf miny y))
-         ((> y maxy) (setf maxy y))
-         ((< z minz) (setf minz z))
-         ((< z minz) (setf minz z)))))
+      (for index index-of-vertex (vertices-of self))      
+      (with-vertex3d    
+       (vertex3d-aref (vertices-of self) index)
+       (x y z w)
+       (cond
+        ((< x minx) (setf minx x))
+        ((> x maxx) (setf maxx x))
+        ((< y miny) (setf miny y))
+        ((> y maxy) (setf maxy y))
+        ((< z minz) (setf minz z))
+        ((< z minz) (setf minz z)))))
     (values minx maxx miny maxy minz maxz)))
 
 (defmethod normalize-scale ((self mesh))
   "Rescale geometry to fit into a 1:1:1 bounding box"
   (multiple-value-bind
-        (minx maxx miny minz maxz)
-      (box-of self))
-  (let ((dx (- maxx minx))
-        (dy (- maxy miny))
-        (dz (- maxz minz))
+        (minx maxx miny maxy minz maxz)
+      (box-of self)
+    (let ((dx (- maxx minx))
+          (dy (- maxy miny))
+          (dz (- maxz minz))
         (scale))
     (cond
       ((and  (> dx dz) (> dx dy)) 
@@ -249,10 +254,11 @@
       ((and (> dz dy) (> dz dx))
        (setf scale (/ 1 (- maxy miny)))))
     (iterate 
-      (for (x y z) in-vertices (vertices-of self))
-      (for )
-           (* x scale) (* y scale) (* z scale) 1.0))
-)))
+      (for index index-of-vertex (vertices-of self))
+      (with-vertex3d 
+       (vertex3d-aref (vertices-of self) index)
+       (x y z)
+       (setf (vertex3d-aref (vertices-of self) index) (vertex3d-tuple (* x scale) (* y scale) (* z scale) 1.0)))))))
 
 (defmethod deindex ((self mesh))
   "Collapse mesh indices")
@@ -272,5 +278,4 @@
   (gl:with-begin gl:+triangles+
     (funcall (draw-fn-of self) self)))
 
-(defparameter *meshes* (make-hash-table :test 'equalp)
-  "A table of loaded meshes to use as brushes.")
+
