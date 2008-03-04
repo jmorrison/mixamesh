@@ -145,7 +145,7 @@
     (setf (normals-of self) vertex-normals)))
 
 (defmethod make-compiled-drawing-function ((self mesh))
-  "Create a function for drawing a mesh, based on currend bindings to the mesh."
+  "Create a function for drawing a mesh, based on current bindings to the mesh."
   (compile nil 
            `(lambda (mesh)
               (iterate 
@@ -260,8 +260,6 @@
        (x y z)
        (setf (vertex3d-aref (vertices-of self) index) (vertex3d-tuple (* x scale) (* y scale) (* z scale) 1.0)))))))
 
-(defmethod deindex ((self mesh))
-  "Collapse mesh indices")
 
 (defmethod stripify ((self mesh))
   "Stripify mesh")
@@ -270,7 +268,8 @@
   "Create a modifiable mesh from a compiled mesh")
 
 (defmethod compilation ((self mesh))
-  "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory.")
+  "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory."
+)
 
 
 (defmethod render ((self mesh))
