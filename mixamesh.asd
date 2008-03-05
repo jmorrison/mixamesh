@@ -4,7 +4,8 @@
 (defsystem :mixamesh
   :author "John Connors"
   :depends-on (:iterate 
-                :cffi 
+                :closer-mop
+                :cffi                 
                 :cl-glfw 
                 :cl-glfw-glu 
                 :cl-glfw-opengl 

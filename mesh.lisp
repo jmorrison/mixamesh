@@ -21,12 +21,16 @@
    (colour-array :accessor colours-of :initarg nil)
    (texcoord-array  :accessor texcoords-of :initarg nil)
    (draw-fn :accessor draw-fn-of :initarg nil))
+  (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Generic mesh type"))
+
+
 
 
 (defclass compiled-mesh ()
   ()
   (:documentation "Optimised, unmodifiable mesh"))
+
 
 
 ;; Topology, if we get clever.
@@ -211,6 +215,23 @@
       (setf (draw-fn-of mesh) (make-compiled-drawing-function mesh))
       (setf (gethash mesh-name *meshes*) mesh)
       mesh-name)))
+
+;; mesh building protocol
+(defun mesh-builder (op data)
+  (ecase op
+    (:set-vertex)
+    (:set-normal)
+    (:set-face)
+    (:new-vertex)
+    (:new-face)
+    (:vertex-index)
+    (:face-index))))
+
+(defmethod initialize-instance :after ((self mesh) &key mesh)
+  (when mesh
+    (make-mesh self (car mesh) (cdr mesh)))
+  (closer-mop:set-funcallable-instance-function self)
+  #'mesh-builder)
 
 (defmethod box-of ((self mesh))
   "Return a bounding box for the mesh."
