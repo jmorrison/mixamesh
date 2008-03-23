@@ -8,27 +8,37 @@
   (make-package :mesh-names))
 
 (defclass mesh ()
-  ((vertex-index-array :accessor vertex-indices-of :documentation "Indices of triangle vertices" :initarg nil)
-   (normal-index-array :accessor normal-indices-of :documentation "Indices of normal vertices" :initarg nil)
-   (colour-index-array :accessor colour-indices-of :documentation "Indices of normal vertices" :initarg nil)
-   (texcoord-index-array :accessor texcoord-indices-of :documentation "Indices of normal vertices" :initarg nil)
-   (face-normal-array :accessor face-normals-of :documentation "Face normals of triangles" :initarg nil)
+  ((vertex-index-array :accessor vertex-indices-of :documentation "Indices of triangle vertices" :initform nil)
+   (normal-index-array :accessor normal-indices-of :documentation "Indices of normal vertices" :initform nil)
+   (colour-index-array :accessor colour-indices-of :documentation "Indices of normal vertices" :initform nil)
+   (texcoord-index-array :accessor texcoord-indices-of :documentation "Indices of normal vertices" :initform nil)
+   (face-normal-array :accessor face-normals-of :documentation "Face normals of triangles" :initform nil)
 ;; possible topological extension
-;; (tri-edge-array :documentation "Maps to triangles half edge")
+;; (tri-edge-array :documentation "Maps to triangles half edgse")
 ;; (vertex-edge-array :documentation "Maps to vertices half edge")
-   (vertex-array :accessor vertices-of :initarg nil)
-   (normal-array :accessor normals-of :initarg nil)
-   (colour-array :accessor colours-of :initarg nil)
-   (texcoord-array  :accessor texcoords-of :initarg nil)
-   (draw-fn :accessor draw-fn-of :initarg nil))
+   (vertex-array :accessor vertices-of :initform nil)
+   (normal-array :accessor normals-of :initform nil)
+   (colour-array :accessor colours-of :initform nil)
+   (texcoord-array  :accessor texcoords-of :initform nil)
+   (draw-fn :accessor draw-fn-of :initform nil)
+   (current-face-index :accessor current-face-index-of :initform 0)
+   (current-vertex-index :accessor current-vertex-index-of :initform 0)
+   (current-material-index :accessor current-material-index-of :initform 0)
+   (materials :accessor materials-of :initform nil))
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Generic mesh type"))
 
 
 
+(defclass flexi-mesh (mesh)
+  ((vertices)
+   (faces))   
+  (:metaclass closer-mop:funcallable-standard-class)
+  (:documentation "Flexible mesh format based on extensible arrays"))
 
-(defclass compiled-mesh ()
+(defclass compiled-mesh (mesh)
   ()
+  (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Optimised, unmodifiable mesh"))
 
 
@@ -148,25 +158,7 @@
           (setf (vector3d-aref vertex-normals  index) (vertex3d normal)))))
     (setf (normals-of self) vertex-normals)))
 
-(defmethod make-compiled-drawing-function ((self mesh))
-  "Create a function for drawing a mesh, based on current bindings to the mesh."
-  (compile nil 
-           `(lambda (mesh)
-              (iterate 
-                (for (values x y z w) in-vertices (vertices-of mesh))
-                ,(when (normals-of self)
-                   `(for (values nx ny nz) in-normals-of (normals-of mesh)))
-                ,(when (colours-of self)
-                   `(for (values cr cg cb ca in-colours-of (colours-of mesh))))
-                ,(when (texcoords-of self)
-                   `(for (values u v) in-texcoords-of (texcoords-of mesh)))
-                (gl:vertex-3f x y z w)
-                ,(when (normals-of self)
-                   `(gl:normal-3f nx ny nz))
-                ,(when (colours-of self)
-                   `(gl:color-4f cr cg cb ca))
-                ,(when (texcoords-of self)
-                   `(gl:tex-coord-2d u v))))))
+
 
 (defun make-mesh (name &rest args)
   "Create a mesh of the form (name :vertices (list of vertices) :normal (list of normals) :material (list of materials) :triangle (list of list of indices))  -- see make-mesh-triangles)"
@@ -219,19 +211,32 @@
 ;; mesh building protocol
 (defun mesh-builder (op data)
   (ecase op
-    (:set-vertex)
-    (:set-normal)
-    (:set-face)
-    (:new-vertex)
-    (:new-face)
-    (:vertex-index)
-    (:face-index))))
+    (:set-vertex nil)
+    (:set-normal nil)
+    (:set-face nil)
+    (:new-vertex nil)
+    (:new-face nil)
+    (:vertex-index nil)
+    (:face-index nil)))
+
+(defgeneric new-vertex (mesh))
+(defgeneric new-face (mesh))
+(defgeneric set-vertex (mesh x y z))
+(defgeneric set-normal (mesh x y z))
+(defgeneric set-face (mesh a b c))
+(defgeneric set-vertex-index (mesh))
+(defgeneric set-vertex-face-index (mesh))
+
+(defgeneric make-compiled-drawing-function (mesh))
 
 (defmethod initialize-instance :after ((self mesh) &key mesh)
   (when mesh
-    (make-mesh self (car mesh) (cdr mesh)))
+    (make-mesh self (car mesh) (cdr mesh))
+    (setf (draw-fn-of mesh) (make-compiled-drawing-function mesh)))
   (closer-mop:set-funcallable-instance-function self)
   #'mesh-builder)
+
+;; mesh geometry calculation ---------------------------------------------
 
 (defmethod box-of ((self mesh))
   "Return a bounding box for the mesh."
@@ -292,6 +297,27 @@
   "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory."
 )
 
+
+;; mesh rendering  ---------------------------------------------
+(defmethod make-compiled-drawing-function ((self mesh))
+  "Create a function for drawing a mesh, based on current bindings to the mesh."
+  (compile nil 
+           `(lambda (mesh)
+              (iterate 
+                (for (values x y z w) in-vertices (vertices-of mesh))
+                ,(when (normals-of self)
+                   `(for (values nx ny nz) in-normals-of (normals-of mesh)))
+                ,(when (colours-of self)
+                   `(for (values cr cg cb ca in-colours-of (colours-of mesh))))
+                ,(when (texcoords-of self)
+                   `(for (values u v) in-texcoords-of (texcoords-of mesh)))
+                (gl:vertex-3f x y z w)
+                ,(when (normals-of self)
+                   `(gl:normal-3f nx ny nz))
+                ,(when (colours-of self)
+                   `(gl:color-4f cr cg cb ca))
+                ,(when (texcoords-of self)
+                   `(gl:tex-coord-2d u v))))))
 
 (defmethod render ((self mesh))
   "Draw a mesh with any appropiate means."
