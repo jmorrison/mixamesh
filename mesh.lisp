@@ -26,8 +26,8 @@
 ;;    (normal-array :accessor normals-of :initform nil)
 ;;    (colour-array :accessor colours-of :initform nil)
 ;;    (texcoord-array  :accessor texcoords-of :initform nil)
-   (current-face-index :accessor current-face-index-of :initform 0)
    (current-vertex-index :accessor current-vertex-index-of :initform 0)
+   (current-face-index :accessor current-face-index-of :initform 0)
 ;;    (current-material-index :accessor current-material-index-of :initform 0)
 ;;    (materials :accessor materials-of :initform nil)
 )
@@ -215,10 +215,12 @@
 ;; mesh building protocol
 (defmethod mesh-builder ((mesh mesh) op data)
   (ecase op
-    (:set-vertex nil)
-    (:set-face nil)
+    (:set-vertex 
+     (setf (vertex3d-aref (vertices-of mesh) (car data)) (vertex3d (cadr data))))
+    (:set-face 
+     (setf (triangle-aref (vertex-indices-of mesh) (car data)) (triangle (cadr data))))
     (:new-vertex 
-     (vertex3d-vector-push-extend data (vertex-indices-of mesh)))
+     (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh)))
 ;;      (when (normals-of mesh)
 ;;        (vector3d-vector-push-extend data (normals-of mesh)))
 ;;      (when (colours-of mesh)
@@ -226,7 +228,7 @@
 ;;      (when (texcoords-of mesh)
 ;;        (vector2d-vector-push-exend data (texcoords-of mesh))))
     (:new-face 
-     (triangle-vector-push-extend data (vertex-indices-of mesh)))
+     (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh)))
 ;;      (when (normal-indices-of mesh)
 ;;        (triangle-vector-push-extend data (normal-indices-of mesh)))
 ;;      (when (colour-indices-of mesh)
@@ -237,8 +239,8 @@
 ;;        (triangle-vector-push-extend data (texcoord-indices-of mesh)))
 ;;      (when (face-normals-of mesh)
 ;;        (vector3d-vector-push-extend data (face-normals-of mesh)))
-    (:vertex-index nil)
-    (:face-index nil)))
+    (:vertex-index (setf (curreent-vertex-index-of mesh) data)
+    (:face-index (setf (current-face-index-of mesh) data))
 
 
 ;; mesh geometry calculation ---------------------------------------------
