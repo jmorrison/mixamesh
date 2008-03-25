@@ -216,11 +216,13 @@
 (defmethod mesh-builder ((mesh mesh) op data)
   (ecase op
     (:set-vertex 
-     (setf (vertex3d-aref (vertices-of mesh) (car data)) (vertex3d (cadr data))))
+     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d  data)))
     (:set-face 
-     (setf (triangle-aref (vertex-indices-of mesh) (car data)) (triangle (cadr data))))
+     (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
     (:new-vertex 
-     (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh)))
+     (progn
+       (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh))
+       (vertex3d-array-dimensions (vertices-of mesh))))
 ;;      (when (normals-of mesh)
 ;;        (vector3d-vector-push-extend data (normals-of mesh)))
 ;;      (when (colours-of mesh)
@@ -228,7 +230,10 @@
 ;;      (when (texcoords-of mesh)
 ;;        (vector2d-vector-push-exend data (texcoords-of mesh))))
     (:new-face 
-     (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh)))
+     (progn 
+       (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh))
+       (triangle-array-dimensions (vertex-indices-of mesh))))
+    
 ;;      (when (normal-indices-of mesh)
 ;;        (triangle-vector-push-extend data (normal-indices-of mesh)))
 ;;      (when (colour-indices-of mesh)
@@ -239,8 +244,8 @@
 ;;        (triangle-vector-push-extend data (texcoord-indices-of mesh)))
 ;;      (when (face-normals-of mesh)
 ;;        (vector3d-vector-push-extend data (face-normals-of mesh)))
-    (:vertex-index (setf (curreent-vertex-index-of mesh) data)
-    (:face-index (setf (current-face-index-of mesh) data))
+    (:vertex-index (setf (current-vertex-index-of mesh) data))
+    (:face-index (setf (current-face-index-of mesh) data))))
 
 
 ;; mesh geometry calculation ---------------------------------------------
