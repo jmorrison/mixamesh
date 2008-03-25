@@ -7,7 +7,6 @@
             #:deindex
             #:stripify
             #:decompilation 
-            #:render
             #:mesh              
             #:compiled-mesh
             #:make-mesh

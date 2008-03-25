@@ -11,10 +11,6 @@
     :tuple-element-type (unsigned-byte 16) 
     :elements (a b c))
 
-(def-tuple-type colour
-    :tuple-element-type single-float 
-    :elements (r g b))
-
 ;; mesh definitons mirror ogl definitions
 
 (defclass mesh ()
@@ -33,11 +29,14 @@
    (current-face-index :accessor current-face-index-of :initform 0)
    (current-vertex-index :accessor current-vertex-index-of :initform 0)
 ;;    (current-material-index :accessor current-material-index-of :initform 0)
-;;    (materials :accessor materials-of :initform nil))
+;;    (materials :accessor materials-of :initform nil)
+)
+
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Generic mesh type"))
+  
 
-(defgeneric make-mesh-faces mesh triangle-data)
+(defgeneric make-mesh-faces (mesh triangle-data))
 
 ;; mesh - building protocol
 (defgeneric mesh-builder (mesh op data))
@@ -122,18 +121,18 @@
 ;;      (vector-b vector3d (bx by bz)))
 ;;   (vector3d-tuple (+ ax bx) (+ ay by) (+ az bz)))
 
-;; (defclause-sequence in-triangles index-of-triangle 
-;;   :access-fn 'triangle-aref
-;;   :size-fn 'triangle-array-dimensions
-;;   :sequence-type 'vector
-;;   :element-type '(values  (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16)))
+(defclause-sequence in-triangles index-of-triangle 
+  :access-fn 'triangle-aref
+  :size-fn 'triangle-array-dimensions
+  :sequence-type 'vector
+  :element-type '(values  (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16)))
 
 
-;; (defclause-sequence in-vertices index-of-vertex
-;;   :access-fn 'vertex3d-aref
-;;   :size-fn 'vertex3d-array-dimensions
-;;   :sequence-type 'vector
-;;   :element-type '(values (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16)))
+(defclause-sequence in-vertices index-of-vertex
+  :access-fn 'vertex3d-aref
+  :size-fn 'vertex3d-array-dimensions
+  :sequence-type 'vector
+  :element-type '(values (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16)))
 
 
 ;; (defmethod calc-face-normals ((self mesh))
@@ -211,7 +210,7 @@
 ;;           (setf (normals-of mesh)
 ;;                     (make-vector3d-array (length vertices)))))
       (setf (gethash mesh-name *meshes*) mesh)
-      mesh-name)))
+      mesh-name))))
 
 ;; mesh building protocol
 (defmethod mesh-builder ((mesh mesh) op data)
@@ -219,7 +218,7 @@
     (:set-vertex nil)
     (:set-face nil)
     (:new-vertex 
-     (vertex3d-vector-push-extend data (vertex-indices-of mesh))
+     (vertex3d-vector-push-extend data (vertex-indices-of mesh)))
 ;;      (when (normals-of mesh)
 ;;        (vector3d-vector-push-extend data (normals-of mesh)))
 ;;      (when (colours-of mesh)
@@ -227,7 +226,7 @@
 ;;      (when (texcoords-of mesh)
 ;;        (vector2d-vector-push-exend data (texcoords-of mesh))))
     (:new-face 
-     (triangle-vector-push-extend data (vertex-indices-of mesh))
+     (triangle-vector-push-extend data (vertex-indices-of mesh)))
 ;;      (when (normal-indices-of mesh)
 ;;        (triangle-vector-push-extend data (normal-indices-of mesh)))
 ;;      (when (colour-indices-of mesh)
@@ -239,18 +238,7 @@
 ;;      (when (face-normals-of mesh)
 ;;        (vector3d-vector-push-extend data (face-normals-of mesh)))
     (:vertex-index nil)
-    (:face-index nil))))
-
-(defgeneric new-vertex (mesh)
-  ())
-(defgeneric new-face (mesh))
-(defgeneric set-vertex (mesh x y z))
-(defgeneric set-normal (mesh x y z))
-(defgeneric set-face (mesh a b c))
-(defgeneric set-vertex-index (mesh))
-(defgeneric set-vertex-face-index (mesh))
-
-(defgeneric make-drawing-function (mesh))
+    (:face-index nil)))
 
 
 ;; mesh geometry calculation ---------------------------------------------
@@ -317,11 +305,11 @@
 
 ;; mesh rendering  ---------------------------------------------
 
-(defmethod render ((self mesh))
-  "Draw a mesh with any appropiate means."
-  (iterate 
-   (for (values x y z w) in-vertices (vertices-of mesh)
-        (gl:vertex-3f x y z w))))
+;; (defmethod render ((self mesh))
+;;   "Draw a mesh with any appropiate means."
+;;   (iterate 
+;;    (for (values x y z w) in-vertices (vertices-of mesh)
+;;         (gl:vertex-3f x y z w))))
 
   
 
