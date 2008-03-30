@@ -13,28 +13,44 @@
 
 ;; mesh definitons mirror ogl definitions
 
-(defclass mesh ()
-  ((vertex-index-array :accessor vertex-indices-of :documentation "Indices of triangle vertices" :initform nil)
-;;    (normal-index-array :accessor normal-indices-of :documentation "Indices of normal vertices" :initform nil)
-;;    (colour-index-array :accessor colour-indices-of :documentation "Indices of normal vertices" :initform nil)
-;;    (texcoord-index-array :accessor texcoord-indices-of :documentation "Indices of normal vertices" :initform nil)
-;;    (face-normal-array :accessor face-normals-of :documentation "Face normals of triangles" :initform nil)
-;; possible topological extension
-;; (tri-edge-array :documentation "Maps to triangles half edgse")
-;; (vertex-edge-array :documentation "Maps to vertices half edge")
-   (vertex-array :accessor vertices-of :initform nil)
-;;    (normal-array :accessor normals-of :initform nil)
-;;    (colour-array :accessor colours-of :initform nil)
-;;    (texcoord-array  :accessor texcoords-of :initform nil)
-   (current-vertex-index :accessor current-vertex-index-of :initform 0)
-   (current-face-index :accessor current-face-index-of :initform 0)
-;;    (current-material-index :accessor current-material-index-of :initform 0)
-;;    (materials :accessor materials-of :initform nil)
-)
 
+;; wishful
+;; (make-mesh-class wire-mesh
+;;  (:attributes (:vertex vertex3d)
+;;               (:colour color)))
+
+;; (make-mesh-class :name textured-mesh
+;;  (:attributes (:vertex vertex3d)
+;;               (:colour color)
+;;               (:texcoord texcoord)))
+
+
+(defclass mesh-base ()
+  ((vertex-index-array :accessor vertex-indices-of :documentation "Indices of triangle vertices" :initform nil)
+   (current-vertex-index :accessor current-vertex-index-of :initform 0)
+   (current-face-index :accessor current-face-index-of :initform 0))
+  (:documentation "Base mixin class for mesh"))
+
+(defclass mesh (mesh-base)
+  ((vertex-array :accessor vertices-of :initform nil)
+   (current-vertex-index :accessor current-vertex-index-of :initform 0)
+   (current-face-index :accessor current-face-index-of :initform 0))
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Generic mesh type"))
-  
+
+(defun expand-mesh-class-attributes (attributes)
+  (loop
+     for attrib in attributes
+     collect 
+       `(,(cl-tuples::make-adorned-symbol (car  attrib) :suffix "ARRAY")
+          :accessor ,(cl-tuples::make-adorned-symbol (car attrib) :suffix "OF")
+          :initform nil)))
+
+(defmacro def-mesh-class  (name &rest attributes)
+    `(defclass ,name (mesh-base)
+       (,@(expand-mesh-class-attributes attributes))   
+       (:metaclass closer-mop-funcallable-standard-class)
+       (:documentation "Custom mesh type")))
 
 (defgeneric make-mesh-faces (mesh triangle-data))
 
@@ -48,13 +64,48 @@
     ;; treat the object as a function
     (closer-mop:set-funcallable-instance-function 
    self
-   #'(lambda (ops data) (mesh-builder self ops data)))))
+   #'(lambda (op data) (mesh-builder self op data)))))
 
 
 (defclass compiled-mesh (mesh)
   ()
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Optimised, unmodifiable mesh"))
+
+;; mesh building protocol
+(defmethod mesh-builder ((mesh mesh) op data)
+  (ecase op
+    (:set-vertex 
+     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d xsdata)))
+    (:set-face 
+     (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
+    (:add-vertex 
+     (progn
+       (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh))
+       (vertex3d-array-dimensions (vertices-of mesh))))
+;;      (when (normals-of mesh)
+;;        (vector3d-vector-push-extend data (normals-of mesh)))
+;;      (when (colours-of mesh)
+;;        (colour-vector-push-extend data (colours-of mesh)))
+;;      (when (texcoords-of mesh)
+;;        (vector2d-vector-push-exend data (texcoords-of mesh))))
+    (:add-triangle
+     (progn 
+       (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh))
+       (triangle-array-dimensions (vertex-indices-of mesh))))
+    
+;;      (when (normal-indices-of mesh)
+;;        (triangle-vector-push-extend data (normal-indices-of mesh)))
+;;      (when (colour-indices-of mesh)
+;;        (triangle-vector-push-extend data (colour-indices-of mesh)))
+;;      (when (colour-indices-of mesh)
+;;        (triangle-vector-push-extend data (colour-indices-of mesh)))
+;;      (when (texcoords-indices-of mesh)
+;;        (triangle-vector-push-extend data (texcoord-indices-of mesh)))
+;;      (when (face-normals-of mesh)
+;;        (vector3d-vector-push-extend data (face-normals-of mesh)))
+    (:vertex-index (setf (current-vertex-index-of mesh) data))
+    (:face-index (setf (current-face-index-of mesh) data))))
 
 
 ;; Topology, if we get clever.
@@ -212,40 +263,6 @@
       (setf (gethash mesh-name *meshes*) mesh)
       mesh-name))))
 
-;; mesh building protocol
-(defmethod mesh-builder ((mesh mesh) op data)
-  (ecase op
-    (:set-vertex 
-     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d  data)))
-    (:set-face 
-     (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
-    (:new-vertex 
-     (progn
-       (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh))
-       (vertex3d-array-dimensions (vertices-of mesh))))
-;;      (when (normals-of mesh)
-;;        (vector3d-vector-push-extend data (normals-of mesh)))
-;;      (when (colours-of mesh)
-;;        (colour-vector-push-extend data (colours-of mesh)))
-;;      (when (texcoords-of mesh)
-;;        (vector2d-vector-push-exend data (texcoords-of mesh))))
-    (:new-face 
-     (progn 
-       (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh))
-       (triangle-array-dimensions (vertex-indices-of mesh))))
-    
-;;      (when (normal-indices-of mesh)
-;;        (triangle-vector-push-extend data (normal-indices-of mesh)))
-;;      (when (colour-indices-of mesh)
-;;        (triangle-vector-push-extend data (colour-indices-of mesh)))
-;;      (when (colour-indices-of mesh)
-;;        (triangle-vector-push-extend data (colour-indices-of mesh)))
-;;      (when (texcoords-indices-of mesh)
-;;        (triangle-vector-push-extend data (texcoord-indices-of mesh)))
-;;      (when (face-normals-of mesh)
-;;        (vector3d-vector-push-extend data (face-normals-of mesh)))
-    (:vertex-index (setf (current-vertex-index-of mesh) data))
-    (:face-index (setf (current-face-index-of mesh) data))))
 
 
 ;; mesh geometry calculation ---------------------------------------------
