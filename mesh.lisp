@@ -47,6 +47,35 @@
           :accessor ,(cl-tuples::make-adorned-symbol (car attrib) :suffix "OF")
           :initform nil)))
 
+(defun expand-mesh-builder-setters (name attributes)
+  (loop
+     for attrib in attributes
+     collect
+       `(,(cl-tuples::make-adorned-symbol (car attrib) :prefix "SET" :package :keyword)
+          (setf (,(cl-tuples::tuple-symboll :def-tuple-aref)
+                  (,(cl-tuples::make-adorned-symbol (car attrib) :suffix "OF")
+                    mesh)
+                  (current-t-vertex-index of mesh) 
+                  (,(cadr attrib) data))))))
+
+(defun expand-mesh-builder-adders (name attributes)
+  (loop
+     for attrib in attributes
+     collect
+       `(,(cl-tuples::make-adorned-symbol (car attrib) :prefix "ADD" :package :keyword)
+          )
+))
+(defun expand-mesh-builder-function (name attributes)
+  `(defmethod mesh-builder ((mesh ,name) op data)
+     (ecase op
+          (:set-face 
+           (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
+          
+          
+        )
+       )
+     ))
+
 (defmacro def-mesh-class  (name &rest attributes)
     `(defclass ,name (mesh-base)
        (,@(expand-mesh-class-attributes attributes))   
@@ -59,7 +88,7 @@
 (defgeneric mesh-builder (mesh op data))
 
 ;; constructor : TO DO -- needs keys :has-vertices :has-normals :has-vetex-indices, etc
-(defmethod initialize-instance :after ((self mesh) &key mesh)
+(defmethod initialize-instance :after ((self base-mesh) &key mesh)
   (when mesh
     (make-mesh self (car mesh) (cdr mesh))
     ;; treat the object as a function
@@ -77,7 +106,7 @@
 (defmethod mesh-builder ((mesh mesh) op data)
   (ecase op
     (:set-vertex 
-     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d data)))
+     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d data)))n
     (:set-face 
      (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
     (:add-vertex 
