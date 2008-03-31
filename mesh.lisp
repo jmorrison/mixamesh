@@ -29,6 +29,7 @@
   ((vertex-index-array :accessor vertex-indices-of :documentation "Indices of triangle vertices" :initform nil)
    (current-vertex-index :accessor current-vertex-index-of :initform 0)
    (current-face-index :accessor current-face-index-of :initform 0))
+  (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Base mixin class for mesh"))
 
 (defclass mesh (mesh-base)
@@ -76,7 +77,7 @@
 (defmethod mesh-builder ((mesh mesh) op data)
   (ecase op
     (:set-vertex 
-     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d xsdata)))
+     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d data)))
     (:set-face 
      (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
     (:add-vertex 
