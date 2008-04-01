@@ -47,34 +47,44 @@
           :accessor ,(cl-tuples::make-adorned-symbol (car attrib) :suffix "OF")
           :initform nil)))
 
+(defun make-accessor-symbol (sym)
+  (cl-tuples::make-adorned-symbol sym :suffix "OF"))
+
 (defun expand-mesh-builder-setters (name attributes)
   (loop
      for attrib in attributes
      collect
        `(,(cl-tuples::make-adorned-symbol (car attrib) :prefix "SET" :package :keyword)
-          (setf (,(cl-tuples::tuple-symboll :def-tuple-aref)
-                  (,(cl-tuples::make-adorned-symbol (car attrib) :suffix "OF")
+          (setf (,(cl-tuples::tuple-symbol (cadr attrib) :def-tuple-aref)
+                  (,(make-accessor-symbol car attrib))
                     mesh)
-                  (current-t-vertex-index of mesh) 
-                  (,(cadr attrib) data))))))
+                  (current-vertex-index-of mesh) 
+                  (,(cadr attrib) data)))))
 
 (defun expand-mesh-builder-adders (name attributes)
   (loop
      for attrib in attributes
      collect
        `(,(cl-tuples::make-adorned-symbol (car attrib) :prefix "ADD" :package :keyword)
-          )
-))
+         (progn
+           (,(cl-tuples::tuple-symbol (cadr attrib)  :def-tuple-vector-push-extend) 
+            (,(cl-tuples::tuple-symbol (cadr attrib) :def-tuple-getter) data) 
+            (,(make-accessor-symbol (car attrib)) mesh))
+           (,(cl-tuples::tuple-symbol (cadr attrib) :def-tuple-array-dimensions) (,(make-accessor-symbol (car attrib))))))))
+
+
 (defun expand-mesh-builder-function (name attributes)
   `(defmethod mesh-builder ((mesh ,name) op data)
      (ecase op
           (:set-face 
            (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
-          
-          
-        )
-       )
-     ))
+          (expand-mesh-builder-setters name attributes)
+          (:add-face
+           (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh))
+           (triangle-array-dimensions (vertex-indices-of mesh)))
+          (expand-mesh-builder-adders name attributes)
+          (:face-index (setf (current-face-index-of mesh) data))
+          (:vertex-index (setf (current-vertex-index-of mesh))))))
 
 (defmacro def-mesh-class  (name &rest attributes)
     `(defclass ,name (mesh-base)
