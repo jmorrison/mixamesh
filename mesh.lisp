@@ -25,15 +25,15 @@
 ;;               (:texcoord texcoord)))
 
 
-(defclass mesh-base ()
-  ((vertex-index-array :accessor vertex-indices-of :documentation "Indices of triangle vertices" :initform nil)
-   (current-vertex-index :accessor current-vertex-index-of :initform 0)
+(defclass base-mesh ()
+  ((current-vertex-index :accessor current-vertex-index-of :initform 0)
    (current-face-index :accessor current-face-index-of :initform 0))
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Base mixin class for mesh"))
 
-(defclass mesh (mesh-base)
-  ((vertex-array :accessor vertices-of :initform nil)
+(defclass mesh (base-mesh)
+  ((vertex-array :accessor vertices-of :initform (make-vertex3d-array 0 :adjustable t :fill-pointer 0))
+   (face-array :accessor faces-of :initform (make-triangle-array 0 :adjustable t :fill-pointer 0))
    (current-vertex-index :accessor current-vertex-index-of :initform 0)
    (current-face-index :accessor current-face-index-of :initform 0))
   (:metaclass closer-mop:funcallable-standard-class)
@@ -51,17 +51,19 @@
   (cl-tuples::make-adorned-symbol sym :suffix "OF"))
 
 (defun expand-mesh-builder-setters (name attributes)
+  (declare (ignorable name))
   (loop
      for attrib in attributes
      collect
        `(,(cl-tuples::make-adorned-symbol (car attrib) :prefix "SET" :package :keyword)
           (setf (,(cl-tuples::tuple-symbol (cadr attrib) :def-tuple-aref)
-                  (,(make-accessor-symbol car attrib))
+                  (,(make-accessor-symbol (car attrib)))
                     mesh)
                   (current-vertex-index-of mesh) 
                   (,(cadr attrib) data)))))
 
 (defun expand-mesh-builder-adders (name attributes)
+  (declare (ignorable name))
   (loop
      for attrib in attributes
      collect
@@ -77,17 +79,17 @@
   `(defmethod mesh-builder ((mesh ,name) op data)
      (ecase op
           (:set-face 
-           (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
-          (expand-mesh-builder-setters name attributes)
+           (setf (triangle-aref (faces-of mesh) (current-face-index-of mesh)) (triangle data)))
+          ,@(expand-mesh-builder-setters name attributes)
           (:add-face
-           (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh))
-           (triangle-array-dimensions (vertex-indices-of mesh)))
-          (expand-mesh-builder-adders name attributes)
+           (triangle-vector-push-extend (triangle data) (faces-of mesh))
+           (triangle-array-dimensions (faces-of mesh)))
+          ,@(expand-mesh-builder-adders name attributes)
           (:face-index (setf (current-face-index-of mesh) data))
-          (:vertex-index (setf (current-vertex-index-of mesh))))))
+          (:vertex-index (setf (current-vertex-index-of mesh) data)))))
 
 (defmacro def-mesh-class  (name &rest attributes)
-    `(defclass ,name (mesh-base)
+    `(defclass ,name (base-mesh)
        (,@(expand-mesh-class-attributes attributes))   
        (:metaclass closer-mop-funcallable-standard-class)
        (:documentation "Custom mesh type")))
@@ -100,11 +102,12 @@
 ;; constructor : TO DO -- needs keys :has-vertices :has-normals :has-vetex-indices, etc
 (defmethod initialize-instance :after ((self base-mesh) &key mesh)
   (when mesh
-    (make-mesh self (car mesh) (cdr mesh))
-    ;; treat the object as a function
-    (closer-mop:set-funcallable-instance-function 
+    (make-mesh self (car mesh) (cdr mesh)))
+  ;; treat the object as a function
+  (closer-mop:set-funcallable-instance-function 
    self
-   #'(lambda (op data) (mesh-builder self op data)))))
+   #'(lambda (op data) (mesh-builder self op data))))
+
 
 
 (defclass compiled-mesh (mesh)
@@ -116,9 +119,9 @@
 (defmethod mesh-builder ((mesh mesh) op data)
   (ecase op
     (:set-vertex 
-     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d data)))n
+     (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d data)))
     (:set-face 
-     (setf (triangle-aref (vertex-indices-of mesh) (current-face-index-of mesh)) (triangle data)))
+     (setf (triangle-aref (faces-of mesh) (current-face-index-of mesh)) (triangle data)))
     (:add-vertex 
      (progn
        (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh))
@@ -129,10 +132,10 @@
 ;;        (colour-vector-push-extend data (colours-of mesh)))
 ;;      (when (texcoords-of mesh)
 ;;        (vector2d-vector-push-exend data (texcoords-of mesh))))
-    (:add-triangle
+    (:add-face
      (progn 
-       (triangle-vector-push-extend (triangle data) (vertex-indices-of mesh))
-       (triangle-array-dimensions (vertex-indices-of mesh))))
+       (triangle-vector-push-extend (triangle data) (faces-of mesh))
+       (triangle-array-dimensions (faces-of mesh))))
     
 ;;      (when (normal-indices-of mesh)
 ;;        (triangle-vector-push-extend data (normal-indices-of mesh)))
@@ -170,11 +173,11 @@
    (&key vertex normal colour texcoord) 
    triangle-data
    (assert vertex)
-   (setf (vertex-indices-of self) (make-triangle-array (length vertex)))
+   (setf (faces-of self) (make-triangle-array (length vertex)))
    (iterate 
     (for (a b c) in vertex)
     (for index from 0 below (length vertex))
-    (setf (triangle-aref (vertex-indices-of self) index) (values a b c)))
+    (setf (triangle-aref (faces-of self) index) (values a b c)))
 ;;    (when normal
 ;;      (assert (= (length vertex) (length normal)))
 ;;      (setf (normal-indices-of self) (make-triangle-array (length vertex)))
@@ -228,9 +231,9 @@
 
 ;; (defmethod calc-face-normals ((self mesh))
 ;;   "Calculate the face normals of a mesh."
-;;   (let* ((face-normals (make-vector3d-array (triangle-array-dimensions (vertex-indices-of self)))))
+;;   (let* ((face-normals (make-vector3d-array (triangle-array-dimensions (faces-of self)))))
 ;;     (iterate
-;;       (for (values a b c) in-triangles (vertex-indices-of self))
+;;       (for (values a b c) in-triangles (faces-of self))
 ;;       (for triangle-index upfrom 0)
 ;;       (setf (vector3d-aref face-normals triangle-index)
 ;;             (calc-face-normal 
@@ -246,7 +249,7 @@
 ;;       (for index index-of-vertex (vertices-of self))
 ;;       (let ((normal (new-vector3d)))        
 ;;         (iterate
-;;           (for (values a b c) in-triangles (vertex-indices-of self))
+;;           (for (values a b c) in-triangles (faces-of self))
 ;;           (for face-index upfrom 0)
 ;;           (when (or (= a index) (= b index) (= c index))
 ;;             (setf (vector3d normal) 
@@ -378,3 +381,8 @@
   
 
 
+;; (defparameter *mesh* (make-instance 'mesh))
+
+;; (funcall *mesh* :add-vertex (make-vertex3d* 1.0 2.0 3.0 1.0))
+
+;; (faces-of )
