@@ -2,9 +2,6 @@
 
 ;; macros to expand into a specific mesh type
 
-(def-tuple-type triangle 
-    :tuple-element-type (unsigned-byte 16) 
-    :elements (a b c))
 
 ;; mesh definitons mirror ogl definitions
 
