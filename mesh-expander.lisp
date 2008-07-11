@@ -19,15 +19,6 @@
    (:metaclass closer-mop:funcallable-standard-class)
    (:documentation "Generic mesh type"))
 
-(defmethod has-normal-attribute-p ((mesh mesh))
-  t)
-
-(defmethod has-color-attribute-p ((mesh mesh))
-  nil)
-
-(defmethod has-texcoord-attribute-p ((mesh mesh))
-  nil)
-
 ;; mesh - building protocol --------------------
 
 (defgeneric mesh-builder (mesh op data))
@@ -101,33 +92,25 @@
        (:vertex-index (setf (current-vertex-index-of mesh) data)))))
 
 
-(defun expand-mesh-predicates (name attributes)
-  "Expand predicate functions for finding out what attributes this mesh has."
-  (iterate
-       (for (array-name accessor-name type-name) in attributes)
-       (collect `(defmethod ,(cl-tuples::make-adorned-symbol array-name :prefix "HAS" :suffix "ATTRIBUTE-P") ((mesh ,name))
-                   t))))
-
-(defun expand-base-mesh-predicates (name attributes)
-  (declare (ignore name))
-  (iterate
-    (for (array-name accessor-name type-name) in attributes)
-    (collect 
-        `(defmethod ,(cl-tuples::make-adorned-symbol array-name :prefix "HAS" :suffix "ATTRIBUTE-P") ((mesh mesh))
-           nil))))
-
-(defun expand-mesh-class  (name base attributes)
+(defun expand-attributes-list (attributes)
+    (loop
+      for (array-name accessor-name type-name) in attributes
+      collect `(quote ,array-name)))
+           
+(defun expand-mesh-class  (name base slots attributes)
   "Expands the form used to declare a custom mesh class"
     `(defclass ,name (,base)
-       (,@(expand-mesh-class-attributes attributes))   
+       (,@slots
+        ,@(expand-mesh-class-attributes attributes)
+        (attributes (list 'vertices 'faces ,@(expand-attributes-list attributes))  :reader attributes-of :allocation :class)   
        (:metaclass closer-mop:funcallable-standard-class)
-       (:documentation "Custom mesh type")))
+       (:documentation "Custom mesh type"))))
 
 ;; main mesh expansion macro --------------------
 
-(defmacro def-mesh-type (name base &rest attributes)
-  `(progn ,(expand-mesh-class name base attributes)
-          ,(expand-mesh-builder-function name attributes)
-          ,@(expand-mesh-predicates name attributes)
-          ,@(expand-base-mesh-predicates name attributes)))
+(defmacro def-mesh-type (name base &rest spec)
+  (destructuring-bind (attributes &key (slots nil)) 
+      spec
+  `(progn ,(expand-mesh-class name base slots attributes)
+          ,(expand-mesh-builder-function name attributes))))
 

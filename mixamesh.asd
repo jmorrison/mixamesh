@@ -5,7 +5,6 @@
   :author "John Connors"
   :depends-on (:iterate 
                 :closer-mop
-                :cffi                 
                 :cl-tuples)
   :serial t
   :components

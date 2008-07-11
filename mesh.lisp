@@ -11,10 +11,10 @@
 
 ;; -- define a few common types of mesh for luck --------------------------
 
-(def-mesh-type wire-mesh base-mesh (colours colours-of colour))
-(def-mesh-type textured-mesh mesh (texcoord uvs-of vector2d))
-(def-mesh-type coloured-mesh mesh (colour colours-of colour))
-  
+
+(def-mesh-type textured-mesh mesh ((texcoord uvs-of vector2d)))
+(def-mesh-type coloured-mesh mesh ((colour colours-of colour)))
+(def-mesh-type located-mesh base-mesh ((texcoord uvs-of vector2d) (colours colours-of colour)) :slots ((position :accesor position-of :initform (new-vector3d)))) 
 
 ;; -- operations on normals et al --------------------
 
@@ -136,6 +136,8 @@
 
 (defmethod stripify ((self mesh))
   "Stripify mesh")
+
+
 
 ;; (defmethod decompilation ((self compiled-mesh))
 ;;   "Create a modifiable mesh from a compiled mesh")
