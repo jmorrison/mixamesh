@@ -1,9 +1,7 @@
 (in-package :mixamesh)
 
-;; macros to expand into a specific mesh type
 
-
-;; mesh definitons mirror ogl definitions
+;; base mesh class type --------------------
 
 
 (defclass base-mesh ()
@@ -30,6 +28,20 @@
 (defmethod has-texcoord-attribute-p ((mesh mesh))
   nil)
 
+;; mesh - building protocol --------------------
+
+(defgeneric mesh-builder (mesh op data))
+
+;; constructor 
+(defmethod initialize-instance :after ((self base-mesh) &rest args)
+  (declare (ignore args))
+  ;; treat the object as a function
+  (closer-mop:set-funcallable-instance-function 
+   self
+   #'(lambda (op data) (mesh-builder self op data))))
+
+;; expanders for individual aspects of a mesh --------------------
+
 (defun expand-mesh-class-attributes (attributes)
   "Expand the class slot defintion of the mesh attribute"
   (loop
@@ -42,6 +54,7 @@
 (defun make-accessor-symbol (sym)
   "Given a symbol, suffix it with -OF so as to make an accessor name"
   (cl-tuples::make-adorned-symbol sym :suffix "OF"))
+
 
 (defun expand-mesh-setters (name attributes)
   "Expands the clauses used to "
@@ -109,6 +122,8 @@
        (,@(expand-mesh-class-attributes attributes))   
        (:metaclass closer-mop:funcallable-standard-class)
        (:documentation "Custom mesh type")))
+
+;; main mesh expansion macro --------------------
 
 (defmacro def-mesh-type (name base &rest attributes)
   `(progn ,(expand-mesh-class name base attributes)

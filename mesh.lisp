@@ -1,30 +1,22 @@
-
 (in-package :mixamesh)
 
+
+;; -- keep track of every mesh instance ----------------------------------
+
 (defparameter *meshes* (make-hash-table :test 'equalp)
-  "A table of loaded meshes to use as brushes.")
+  "A table of meshes.")
 
 (unless (find-package :mesh-names)
   (make-package :mesh-names))
 
+;; -- define a few common types of mesh for luck --------------------------
 
 (def-mesh-type wire-mesh base-mesh (colours colours-of colour))
 (def-mesh-type textured-mesh mesh (texcoord uvs-of vector2d))
 (def-mesh-type coloured-mesh mesh (colour colours-of colour))
   
 
-;; mesh - building protocol
-(defgeneric mesh-builder (mesh op data))
-
-;; constructor 
-(defmethod initialize-instance :after ((self base-mesh) &rest args)
-  (declare (ignore args))
-  ;; treat the object as a function
-  (closer-mop:set-funcallable-instance-function 
-   self
-   #'(lambda (op data) (mesh-builder self op data))))
-
-
+;; -- operations on normals et al --------------------
 
 (def-tuple-op calc-face-normal    
      ((vertex-a vertex3d (ax ay az aw))
@@ -42,7 +34,7 @@
       (vector-b vector3d (bx by bz)))
   "return the sum of two vectors"
   (:return vector3d
-           (vector3d-tuple (+ ax bx) (+ ay by) (+ az bz))))
+           (vector3d* (+ ax bx) (+ ay by) (+ az bz))))
 
 ;; declarations to allow the iterate macro to iterate over the
 ;; triangles in a mesh or the vertices
@@ -138,7 +130,8 @@
       (with-vertex3d 
        (vertex3d-aref (vertices-of self) index)
        (x y z w)
-       (setf (vertex3d-aref (vertices-of self) index) (vertex3d-tuple (* x scale) (* y scale) (* z scale) w)))))))
+       (setf (vertex3d-aref (vertices-of self) index) 
+             (vertex3d* (* x scale) (* y scale) (* z scale) w)))))))
 
 
 (defmethod stripify ((self mesh))
