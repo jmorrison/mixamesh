@@ -3,19 +3,24 @@
 
 ;; base mesh class type --------------------
 
-
-(defclass base-mesh ()
-  ((id :reader id-of :initform (get-universal-time))
+(defclass vertex-array ()
    (vertex-array :accessor vertices-of :initform (make-vertex3d-array 0 :adjustable t :fill-pointer 0))
+   (current-vertex-index :accessor current-vertex-index-of :initform 0))
+
+(defclass face-array ()
    (face-array :accessor faces-of :initform (make-triangle-array 0 :adjustable t :fill-pointer 0))
-   (current-vertex-index :accessor current-vertex-index-of :initform 0)
    (current-face-index :accessor current-face-index-of :initform 0))
-  (:metaclass closer-mop:funcallable-standard-class)
-  (:documentation "Base mixin class for mesh"))
+
+(defclass base-mesh (vertex-aray face-array)
+  ((id :reader id-of :initform (get-universal-time))
+   (attributes :initform (list 'vertices 'faces) :allocation :class :reader attributes-of)
+   (:metaclass closer-mop:funcallable-standard-class)
+   (:documentation "Base mixin class for mesh"))
 
 (defclass mesh (base-mesh)
   ((normals-array :accessor normals-of :initform (make-vector3d-array 0 :adjustable t :fill-pointer 0))   
    (face-normals :accessor face-normals-of :initform (make-vector3d-array 0 :adjustable t :fill-pointer 0)))
+   (attributes :initform (list 'vertices 'faces 'normals 'face-normals) :allocation :class :reader attributes-of)
    (:metaclass closer-mop:funcallable-standard-class)
    (:documentation "Generic mesh type"))
 
@@ -102,7 +107,7 @@
     `(defclass ,name (,base)
        (,@slots
         ,@(expand-mesh-class-attributes attributes)
-        (attributes (list 'vertices 'faces ,@(expand-attributes-list attributes))  :reader attributes-of :allocation :class)   
+        (attributes :initform (list 'vertices 'faces ,@(expand-attributes-list attributes))  :reader attributes-of :allocation :class)   
        (:metaclass closer-mop:funcallable-standard-class)
        (:documentation "Custom mesh type"))))
 
