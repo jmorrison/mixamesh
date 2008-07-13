@@ -14,7 +14,7 @@
 
 (def-mesh-type textured-mesh mesh ((texcoord uvs-of vector2d)))
 (def-mesh-type coloured-mesh mesh ((colour colours-of colour)))
-(def-mesh-type located-mesh base-mesh ((texcoord uvs-of vector2d) (colours colours-of colour)) :slots ((position :accesor position-of :initform (new-vector3d)))) 
+(def-mesh-type located-mesh base-mesh ((texcoord uvs-of vector2d) (colours colours-of colour)) :slots ((position :accessor position-of :initform (new-vector3d)))) 
 
 ;; -- operations on normals et al --------------------
 
@@ -139,11 +139,17 @@
 
 
 
+;; empty base class to specialise on
+(defclass compiled-mesh ()
+  ())
+
+
 ;; (defmethod decompilation ((self compiled-mesh))
 ;;   "Create a modifiable mesh from a compiled mesh")
 
-;; (defmethod compilation ((self mesh))
-;;   "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory."
-;; )
+(defmethod mesh-compile ((self mesh) &rest args)
+   "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory."
+   (declare (ignorable args))
+ )
 
 
