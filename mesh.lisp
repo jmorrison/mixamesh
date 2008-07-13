@@ -14,7 +14,9 @@
 
 (def-mesh-type textured-mesh mesh ((texcoord uvs-of vector2d)))
 (def-mesh-type coloured-mesh mesh ((colour colours-of colour)))
-(def-mesh-type located-mesh base-mesh ((texcoord uvs-of vector2d) (colours colours-of colour)) :slots ((position :accessor position-of :initform (new-vector3d)))) 
+(def-mesh-type located-mesh base-mesh 
+  ((texcoord uvs-of vector2d) (colours colours-of colour)) 
+  :slots ((position :accessor position-of :initform (new-vector3d)))) 
 
 ;; -- operations on normals et al --------------------
 
@@ -51,6 +53,7 @@
   :sequence-type 'vector
   :element-type '(values (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16) (unsigned-byte 16)))
 
+(defgeneric calc-face-normals (mesh))
 
 (defmethod calc-face-normals ((self mesh))
    "Calculate the face normals of a mesh."
@@ -64,6 +67,8 @@
               (vertex3d-aref (vertices-of self) b)
               (vertex3d-aref (vertices-of self) c))))
      (setf (face-normals-of self) face-normals)))
+
+(defgeneric calc-vertex-normals (mesh))
 
 (defmethod calc-vertex-normals ((self mesh))
   "Calculate the vertex normals of a mesh."
@@ -83,6 +88,8 @@
 
 
 ;; mesh geometry calculation ---------------------------------------------
+
+(defgeneric box-of (mesh))
 
 (defmethod box-of ((self mesh))
   "Return a bounding box for the mesh."
@@ -105,6 +112,8 @@
         ((< z minz) (setf minz z))
         ((< z minz) (setf minz z)))))
     (values minx maxx miny maxy minz maxz)))
+
+(defgeneric normalize-scale (mesh))
 
 (defmethod normalize-scale ((self mesh))
   "Rescale geometry to fit into a 1:1:1 bounding box"
@@ -133,6 +142,8 @@
        (setf (vertex3d-aref (vertices-of self) index) 
              (vertex3d* (* x scale) (* y scale) (* z scale) w)))))))
 
+
+(defgeneric stripify (mesh))
 
 (defmethod stripify ((self mesh))
   "Stripify mesh")

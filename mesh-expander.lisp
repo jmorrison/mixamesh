@@ -26,7 +26,7 @@
 
 ;; mesh - building protocol --------------------
 
-(defgeneric mesh-builder (mesh op data))
+(defgeneric mesh-builder (mesh op &optional data))
 
 ;; constructor 
 (defmethod initialize-instance :after ((self base-mesh) &rest args)
@@ -34,7 +34,7 @@
   ;; treat the object as a function
   (closer-mop:set-funcallable-instance-function 
    self
-   #'(lambda (op data) (mesh-builder self op data))))
+   #'(lambda (op &optional data) (mesh-builder self op data))))
 
 ;; expanders for individual aspects of a mesh --------------------
 
@@ -53,7 +53,7 @@
 
 
 (defun expand-mesh-setters (name attributes)
-  "Expands the clauses used to "
+  "Expands the clauses used to set an attribute indexed by the current vertex index."
   (declare (ignorable name))
   (loop
      for (array-name accessor-name type-name) in attributes
@@ -61,7 +61,7 @@
        `(,(cl-tuples::make-adorned-symbol array-name :prefix "SET" :package :keyword)
           (setf (,(cl-tuples::tuple-symbol type-name :def-tuple-aref)
                   (,accessor-name mesh)
-                  (current-vertex-index-of mesh)) 
+                   (current-vertex-index-of mesh)) 
                   (,type-name data)))))
 
 (defun expand-mesh-adders (name attributes)
@@ -76,10 +76,19 @@
             (,accessor-name mesh))
           (,(cl-tuples::tuple-symbol type-name :def-tuple-array-dimensions) (,accessor-name mesh)))))
 
+(defun expand-mesh-clearers (name attributes)
+  "Expands the clauses use to clear attribute arrays in a mesh"
+  (declare (ignorable name))
+  (loop
+     for (array-name accessor-name type-name) in attributes
+     collect
+       `(,(cl-tuples::make-adorned-symbol array-name :prefix "CLEAR" :package :keyword)
+          (setf (,accessor-name mesh) 
+                (,(cl-tuples::tuple-symbol type-name :def-tuple-array-maker) 0 :adjustable t :fill-pointer 0)))))
 
 (defun expand-mesh-builder-function (name attributes)
   "Expands the form used to deefine the function used to build the mesh"
-  `(defmethod mesh-builder ((mesh ,name) op data)
+  `(defmethod mesh-builder ((mesh ,name) op &optional data)
      (case op
        (:set-vertex 
         (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d data)))
@@ -89,9 +98,16 @@
        (:add-vertex 
         (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh))
         (vertex3d-array-dimensions (vertices-of mesh)))
+       (:clear-vertices
+        (setf (vertices-of mesh) (make-vertex3d-array 0 :adjustable t :fill-pointer 0))
+        (setf (current-vertex-index-of mesh) 0))
+       ,@(expand-mesh-clearers name attributes)
        (:add-face
         (triangle-vector-push-extend (triangle data) (faces-of mesh))
         (triangle-array-dimensions (faces-of mesh)))
+       (:clear-faces
+        (setf (faces-of mesh) (make-triangle-array 0 :adjustable t :fill-pointer 0))
+        (setf (current-face-index-of mesh) 0))
        ,@(expand-mesh-adders name attributes)
        (:face-index (setf (current-face-index-of mesh) data))
        (:vertex-index (setf (current-vertex-index-of mesh) data)))))

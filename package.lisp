@@ -3,13 +3,13 @@
 
 (defpackage :mixamesh
   (:use :cl :iterate :cl-tuples)
-  (:export #:compilation 
-            #:deindex
-            #:stripify
-            #:decompilation 
-            #:mesh              
-            #:compiled-mesh
-            #:make-mesh
+  (:export #:vertex-array 
+            #:face-array
+            #:base-mesh
+            #:mesh
+            #:def-mesh-type             
+            #:textured-mesh
+            #:coloured-mesh
             #:*meshes*))
 
 (in-package :mixamesh)
