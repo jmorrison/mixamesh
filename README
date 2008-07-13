@@ -1,0 +1,83 @@
+
+Mixamesh
+========
+
+Mixamesh aims to be a Common Lisp equivalent of Open Mesh, which
+treats the mesh as a flexible data type containing varying numbers of
+arrays of vertices, and tagged vertex attributes indexed by a
+collection of faces. Common Lisp macro expansion being somewhat more
+concise and less syntax laden than C++ Template expansion, the
+interface is somewhat simpler, too.
+
+There is a single macro form that expands to the class defintion of a mesh
+and the functions that operate on it.
+
+For example:
+
+(def-mesh-type textured-mesh mesh (texcoord uvs-of vector2d))
+
+Would define a class called textured mesh derived from mesh mesh is a
+base class which is defined in mixamesh which is assumed to be the
+base of all meshes. It would have an accessor called uvs-of, wich
+would give us access to an array of vector2ds called texcoords contained
+within an instance of the mesh class.
+
+The base class, mesh exists so that generic functions that operate on
+all meshes can be defined. It is assumed to contain vertices organised
+into faces, and both vertex and face normals are assumed to be
+present. Beyond that, no assumptions about mesh attributes are made.
+
+Every mesh defined by def-mesh-type comes with several helpers. An
+instance of the mesh class defined by def-mesh-type itself is a
+funcallable class, which is roughly anlougus to a C++ functor - an
+object instance to which function call syntax and semantics can
+be applied. This is not standard Common Lisp, but is common to
+nearly all extant Common Lisp implementations and the Closer-Mop
+library provides a wrapper round any functional differences.
+
+When called as a function the mesh instance invokes the mesh-builder
+generic functions which has specialisation methods defined for every
+mesh defined via def-mesh-type, due to the fact that def-mesh-type
+expands them at run time. The function will take a keyword as it's
+first argument, denoting an operation, and a tuple in array form.
+
+The keyword is of the form :add-{attribute-name} or
+:set-{atrribute-name} eg.  add-vertex, add-colour, set-uv. The add-{*}
+form assumes that we wish to add an attribute of that type to the
+exising array of attributes in that mesh.
+
+The :set-{*} form assumes that the function invocation is to modify an
+existing attribute to the mesh. The index of the attributet to modify
+is not passed in with the function, but stored in the mesh instance
+itself along with the array. The accessor to it is named
+current-{attribute-name}-index-of: eg (current-colour-index-of mesh). 
+
+This is not supplied as a parameter so that when the
+:add-{attribute-name} operation is used, it may update this to be the
+index of the last element in the array of that attribute. This helps
+when maintaining a one to one mapping between vertices and attributes
+in that it enables us to be sure vertex and attribute arrays are the
+same size.
+
+It's possible that this is actually an excessively complex interface
+and something simpler might be engineered via the genralized
+assignement mechanism of Common Lisp whereby place forms are treated
+as assigment targets by creating a set of defsetf expanders for each
+attribute. The author did not explore this avenue.
+
+
+Mixamesh is still less flexible than Open Mesh in that it expects
+meshes to be indexed by triangluar faces and does not make this
+optional. It also does not allow indexing by polyonal faces or the use
+of halfedge data for mesh based algorithms that need more topological
+information. However there is no real reason that it could not be
+expanded to do so, given that Lisps macro-expsansion capabilities are
+a superset of C++'s template expansion capabilities that Open Mesh is
+based upon.
+
+Mixamesh deals only with creating a flexible mesh
+representation. Actual rendering of the mesh is left to the client of
+the package. It is envisaged that rendering is handled by a generic
+function, specialised per mesh type. A more flexible renderer would
+specialise by attribute type and compose into a renderer for a given
+mesh type.
