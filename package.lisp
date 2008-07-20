@@ -10,6 +10,10 @@
             #:def-mesh-type             
             #:textured-mesh
             #:coloured-mesh
+            #:faces-of
+            #:vertices-of
+            #:colours-of
+            #:uvs-of
             #:*meshes*))
 
 (in-package :mixamesh)

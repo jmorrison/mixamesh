@@ -3,30 +3,26 @@
 
 ;; base mesh class type --------------------
 
-(defclass vertex-array ()
-  ((vertex-array :accessor vertices-of :initform (make-vertex3d-array 0 :adjustable t :fill-pointer 0))
-   (current-vertex-index :accessor current-vertex-index-of :initform 0)))
+(defclass base-mesh ()
+  ((face-array :accessor faces-of :initform (make-triangle-array 0 :adjustable t :fill-pointer 0) :type (vector (unsigned-byte 16) *))
+   (current-face-index :accessor current-face-index-of :initform 0 :type fixnum)
+   (current-vertex-index :accessor current-vertex-index-of :initform 0 :type fixnum)
+   (id :reader id-of :initform (get-universal-time)))
+  (:metaclass closer-mop:funcallable-standard-class)
+  (:documentation "Base class for all meshes"))
 
-(defclass face-array ()
-   ((face-array :accessor faces-of :initform (make-triangle-array 0 :adjustable t :fill-pointer 0))
-    (current-face-index :accessor current-face-index-of :initform 0)))
+(defgeneric mesh-builder (mesh op &optional data) 
+  (:method  ((mesh base-mesh) op &optional data)
+    (case op
+      (:face-add (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
+      (:face-set (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
+      (:face-clear (setf (faces-of mesh) (make-triangle-array data :ajustable t :fill-pointer 0))))))
 
-(defclass base-mesh (vertex-aray face-array)
-  ((id :reader id-of :initform (get-universal-time))
-   (attributes :initform (list 'vertices 'faces) :allocation :class :reader attributes-of))
-   (:metaclass closer-mop:funcallable-standard-class)
-   (:documentation "Base mixin class for mesh"))
 
-(defclass mesh (base-mesh)
-  ((normals-array :accessor normals-of :initform (make-vector3d-array 0 :adjustable t :fill-pointer 0))   
-   (face-normals :accessor face-normals-of :initform (make-vector3d-array 0 :adjustable t :fill-pointer 0))
-   (attributes :initform (list 'vertices 'faces 'normals 'face-normals) :allocation :class :reader attributes-of))
-   (:metaclass closer-mop:funcallable-standard-class)
-   (:documentation "Generic mesh type"))
 
 ;; mesh - building protocol --------------------
 
-(defgeneric mesh-builder (mesh op &optional data))
+
 
 ;; constructor 
 (defmethod initialize-instance :after ((self base-mesh) &rest args)
@@ -61,8 +57,8 @@
        `(,(cl-tuples::make-adorned-symbol array-name :prefix "SET" :package :keyword)
           (setf (,(cl-tuples::tuple-symbol type-name :def-tuple-aref)
                   (,accessor-name mesh)
-                   (current-vertex-index-of mesh)) 
-                  (,type-name data)))))
+                   (the fixnum (current-vertex-index-of mesh)))
+                  (the ,(cl-tuples::tuple-element-type type-name) (,type-name data))))))
 
 (defun expand-mesh-adders (name attributes)
   "Expands the clauses used to add attribute values to a mesh."
@@ -84,33 +80,19 @@
      collect
        `(,(cl-tuples::make-adorned-symbol array-name :prefix "CLEAR" :package :keyword)
           (setf (,accessor-name mesh) 
-                (,(cl-tuples::tuple-symbol type-name :def-tuple-array-maker) 0 :adjustable t :fill-pointer 0)))))
+                (,(cl-tuples::tuple-symbol type-name :def-tuple-array-maker) (list data) :adjustable t :fill-pointer 0)))))
+
 
 (defun expand-mesh-builder-function (name attributes)
   "Expands the form used to deefine the function used to build the mesh"
   `(defmethod mesh-builder ((mesh ,name) op &optional data)
      (case op
-       (:set-vertex 
-        (setf (vertex3d-aref (vertices-of mesh) (current-vertex-index-of mesh)) (vertex3d data)))
-       (:set-face 
-        (setf (triangle-aref (faces-of mesh) (current-face-index-of mesh)) (triangle data)))
        ,@(expand-mesh-setters name attributes)
-       (:add-vertex 
-        (vertex3d-vector-push-extend (vertex3d data) (vertices-of mesh))
-        (vertex3d-array-dimensions (vertices-of mesh)))
-       (:clear-vertices
-        (setf (vertices-of mesh) (make-vertex3d-array 0 :adjustable t :fill-pointer 0))
-        (setf (current-vertex-index-of mesh) 0))
        ,@(expand-mesh-clearers name attributes)
-       (:add-face
-        (triangle-vector-push-extend (triangle data) (faces-of mesh))
-        (triangle-array-dimensions (faces-of mesh)))
-       (:clear-faces
-        (setf (faces-of mesh) (make-triangle-array 0 :adjustable t :fill-pointer 0))
-        (setf (current-face-index-of mesh) 0))
-       ,@(expand-mesh-adders name attributes)
+       ,@(expand-mesh-adders name attributes)       
        (:face-index (setf (current-face-index-of mesh) data))
-       (:vertex-index (setf (current-vertex-index-of mesh) data)))))
+       (:vertex-index (setf (current-vertex-index-of mesh) data))
+       (otherwise (call-next-method)))))
 
 
 (defun expand-attributes-list (attributes)
@@ -120,7 +102,7 @@
            
 (defun expand-mesh-class  (name base slots attributes)
   "Expands the form used to declare a custom mesh class"
-    `(defclass ,name (,base)
+    `(defclass ,name (,@base)
        (,@slots
         ,@(expand-mesh-class-attributes attributes)
         (attributes :initform (list 'vertices 'faces ,@(expand-attributes-list attributes))  :reader attributes-of :allocation :class))   

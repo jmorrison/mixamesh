@@ -1,5 +1,8 @@
 
-(in-package :asdf)
+(defpackage :mixamesh-system
+    (:use :cl :asdf))
+
+(in-package :mixamesh-system)
 
 (defsystem :mixamesh
   :author "John Connors"
@@ -11,3 +14,10 @@
   ((:file "package")
    (:file "mesh-expander")
    (:file "mesh")))
+
+(defsystem :mixamesh-tests
+  :author "John Connors"
+  :depends-on (:mixamesh)
+  :serial t
+  :components
+  ((:file "mixamesh-tests")))

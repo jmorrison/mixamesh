@@ -11,19 +11,27 @@
 
 ;; -- define a few common types of mesh for luck --------------------------
 
+;; abstract base mesh 
 
-(def-mesh-type textured-mesh mesh ((texcoord uvs-of vector2d)))
-(def-mesh-type coloured-mesh mesh ((colour colours-of colour)))
-(def-mesh-type located-mesh base-mesh 
-  ((texcoord uvs-of vector2d) (colours colours-of colour)) 
-  :slots ((position :accessor position-of :initform (new-vector3d)))) 
+;; simple mesh w vertices
+(def-mesh-type simple-mesh (base-mesh) ((vertex vertices-of vertex3d)))
+
+;; simple mesh with normals for lighting
+(def-mesh-type mesh (simple-mesh) ((normal normals-of vector3d) (face-normals face-normals-of vector3d)))
+
+;; mesh with textures
+(def-mesh-type textured-mesh (simple-mesh) ((texcoord uvs-of vector2d)))
+
+;; mesh with vertex colours or other attributes
+(def-mesh-type coloured-mesh (simple-mesh) ((colour colours-of colour)))
+ 
 
 ;; -- operations on normals et al --------------------
 
 (def-tuple-op calc-face-normal    
-     ((vertex-a vertex3d (ax ay az aw))
-      (vertex-b vertex3d (bx by bz bw))
-      (vertex-c vertex3d (cx cy cz cw)))
+    ((vertex-a vertex3d (ax ay az aw))
+     (vertex-b vertex3d (bx by bz bw))
+     (vertex-c vertex3d (cx cy cz cw)))
   "return the normal of a face"
   (:return vector3d
            (vector3d-normal
@@ -32,8 +40,8 @@
              (delta-vector3d vertex-a vertex-c)))))
 
 (def-tuple-op vector3d-sum 
-     ((vector-a vector3d (ax ay az))
-      (vector-b vector3d (bx by bz)))
+    ((vector-a vector3d (ax ay az))
+     (vector-b vector3d (bx by bz)))
   "return the sum of two vectors"
   (:return vector3d
            (vector3d* (+ ax bx) (+ ay by) (+ az bz))))
@@ -56,17 +64,17 @@
 (defgeneric calc-face-normals (mesh))
 
 (defmethod calc-face-normals ((self mesh))
-   "Calculate the face normals of a mesh."
-   (let* ((face-normals (make-vector3d-array (triangle-array-dimensions (faces-of self)))))
-     (iterate
-       (for (values a b c) in-triangles (faces-of self))
-       (for triangle-index upfrom 0)
-       (setf (vector3d-aref face-normals triangle-index)
-             (calc-face-normal 
-              (vertex3d-aref (vertices-of self) a)
-              (vertex3d-aref (vertices-of self) b)
-              (vertex3d-aref (vertices-of self) c))))
-     (setf (face-normals-of self) face-normals)))
+  "Calculate the face normals of a mesh."
+  (let* ((face-normals (make-vector3d-array (triangle-array-dimensions (faces-of self)))))
+    (iterate
+      (for (values a b c) in-triangles (faces-of self))
+      (for triangle-index upfrom 0)
+      (setf (vector3d-aref face-normals triangle-index)
+            (calc-face-normal 
+             (vertex3d-aref (vertices-of self) a)
+             (vertex3d-aref (vertices-of self) b)
+             (vertex3d-aref (vertices-of self) c))))
+    (setf (face-normals-of self) face-normals)))
 
 (defgeneric calc-vertex-normals (mesh))
 
@@ -83,8 +91,8 @@
             (setf (vector3d normal) 
                   (vector3d-sum (vector3d normal) 
                                 (vector3d-aref (face-normals-of self) face-index))))
-          (setf (vector3d-aref vertex-normals  index) (vertex3d normal)))))
-    (setf (normals-of self) vertex-normals)))
+          (setf (vector3d-aref vertex-normals index) (vector3d normal)))))
+    (setf (normals-of self) vertex-normals)))  
 
 
 ;; mesh geometry calculation ---------------------------------------------
@@ -102,15 +110,15 @@
     (iterate
       (for index index-of-vertex (vertices-of self))      
       (with-vertex3d    
-       (vertex3d-aref (vertices-of self) index)
-       (x y z w)
-       (cond
-        ((< x minx) (setf minx x))
-        ((> x maxx) (setf maxx x))
-        ((< y miny) (setf miny y))
-        ((> y maxy) (setf maxy y))
-        ((< z minz) (setf minz z))
-        ((< z minz) (setf minz z)))))
+          (vertex3d-aref (vertices-of self) index)
+          (x y z w)
+        (cond
+          ((< x minx) (setf minx x))
+          ((> x maxx) (setf maxx x))
+          ((< y miny) (setf miny y))
+          ((> y maxy) (setf maxy y))
+          ((< z minz) (setf minz z))
+          ((< z minz) (setf minz z)))))
     (values minx maxx miny maxy minz maxz)))
 
 (defgeneric normalize-scale (mesh))
@@ -123,24 +131,24 @@
     (let ((dx (- maxx minx))
           (dy (- maxy miny))
           (dz (- maxz minz))
-        (scale))
-    (cond
-      ((and  (> dx dz) (> dx dy)) 
-       ;; dx is largest dimension
-       (setf scale (/ 1 (- maxx minx))))
-      ;; dy is largest dimension
-      ((and (> dy dz) (> dy dx))  
-       (setf scale (/ 1 (- maxy miny))))
-      ;; dz is largest dimension
-      ((and (> dz dy) (> dz dx))
-       (setf scale (/ 1 (- maxy miny)))))
-    (iterate 
-      (for index index-of-vertex (vertices-of self))
-      (with-vertex3d 
-       (vertex3d-aref (vertices-of self) index)
-       (x y z w)
-       (setf (vertex3d-aref (vertices-of self) index) 
-             (vertex3d* (* x scale) (* y scale) (* z scale) w)))))))
+          (scale))
+      (cond
+        ((and  (> dx dz) (> dx dy)) 
+         ;; dx is largest dimension
+         (setf scale (/ 1 (- maxx minx))))
+        ;; dy is largest dimension
+        ((and (> dy dz) (> dy dx))  
+         (setf scale (/ 1 (- maxy miny))))
+        ;; dz is largest dimension
+        ((and (> dz dy) (> dz dx))
+         (setf scale (/ 1 (- maxy miny)))))
+      (iterate 
+        (for index index-of-vertex (vertices-of self))
+        (with-vertex3d 
+            (vertex3d-aref (vertices-of self) index)
+            (x y z w)
+          (setf (vertex3d-aref (vertices-of self) index) 
+                (vertex3d* (* x scale) (* y scale) (* z scale) w)))))))
 
 
 (defgeneric stripify (mesh))
@@ -159,8 +167,8 @@
 ;;   "Create a modifiable mesh from a compiled mesh")
 
 (defmethod mesh-compile ((self mesh) &rest args)
-   "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory."
-   (declare (ignorable args))
- )
+  "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory."
+  (declare (ignorable args))
+  )
 
 
