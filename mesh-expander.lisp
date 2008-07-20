@@ -14,9 +14,9 @@
 (defgeneric mesh-builder (mesh op &optional data) 
   (:method  ((mesh base-mesh) op &optional data)
     (case op
-      (:face-add (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
-      (:face-set (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
-      (:face-clear (setf (faces-of mesh) (make-triangle-array data :ajustable t :fill-pointer 0))))))
+      (:add-face (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
+      (:set-face (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
+      (:clear-face (setf (faces-of mesh) (make-triangle-array data :ajustable t :fill-pointer 0))))))
 
 
 
