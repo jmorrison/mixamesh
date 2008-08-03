@@ -6,10 +6,11 @@
   (:export #:vertex-array 
             #:face-array
             #:base-mesh
+            #:simple-mesh
             #:mesh
-            #:def-mesh-type             
             #:textured-mesh
-            #:coloured-mesh
+            #:coloured-mesh            
+            #:def-mesh-type             
             #:faces-of
             #:vertices-of
             #:colours-of
