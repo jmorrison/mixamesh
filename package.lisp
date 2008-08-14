@@ -15,6 +15,8 @@
             #:vertices-of
             #:colours-of
             #:uvs-of
+            #:render
+            #:*textures*
             #:*meshes*))
 
 (in-package :mixamesh)
