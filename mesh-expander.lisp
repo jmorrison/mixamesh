@@ -1,6 +1,15 @@
 (in-package :mixamesh)
 
 
+;; -- keep track of every mesh instance ----------------------------------
+
+(defparameter *meshes* (make-hash-table :test 'equalp)
+  "A table of meshes.")
+
+(defparameter *textures* (make-hash-table :test 'equalp)
+  "A table of textures.")
+
+
 ;; base mesh class type --------------------
 
 (defclass base-mesh ()

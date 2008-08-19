@@ -1,13 +1,6 @@
 (in-package :mixamesh)
 
 
-;; -- keep track of every mesh instance ----------------------------------
-
-(defparameter *meshes* (make-hash-table :test 'equalp)
-  "A table of meshes.")
-
-(unless (find-package :mesh-names)
-  (make-package :mesh-names))
 
 ;; -- define a few common types of mesh for luck --------------------------
 
