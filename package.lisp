@@ -7,6 +7,7 @@
             #:face-array
             #:base-mesh
             #:simple-mesh
+            #:make-mesh
             #:mesh
             #:textured-mesh
             #:coloured-mesh            

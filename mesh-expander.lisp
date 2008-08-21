@@ -3,10 +3,10 @@
 
 ;; -- keep track of every mesh instance ----------------------------------
 
-(defparameter *meshes* (make-hash-table :test 'equalp)
+(defparameter *meshes* (make-hash-table :test 'eq)
   "A table of meshes.")
 
-(defparameter *textures* (make-hash-table :test 'equalp)
+(defparameter *textures* (make-hash-table :test 'eq)
   "A table of textures.")
 
 
@@ -16,7 +16,7 @@
   ((face-array :accessor faces-of :initform (make-triangle-array 0 :adjustable t :fill-pointer 0) :type (vector (unsigned-byte 16) *))
    (current-face-index :accessor current-face-index-of :initform 0 :type fixnum)
    (current-vertex-index :accessor current-vertex-index-of :initform 0 :type fixnum)
-   (id :reader id-of :initform (get-universal-time)))
+   (id :allocation :class :accessor id-of :initform (get-universal-time)))
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Base class for all meshes"))
 
@@ -37,9 +37,19 @@
 (defmethod initialize-instance :after ((self base-mesh) &rest args)
   (declare (ignore args))
   ;; treat the object as a function
+  (setf (gethash (id-of self) *meshes*) self)
   (closer-mop:set-funcallable-instance-function 
    self
    #'(lambda (op &optional data) (mesh-builder self op data))))
+
+(defun make-mesh (mesh-type)
+  "Create a mesh instance and return the handle to it"
+  (let* ((mesh
+         (make-instance mesh-type))
+        (result
+         (id-of mesh)))
+    (incf (id-of mesh))
+    result))
 
 ;; expanders for individual aspects of a mesh --------------------
 
