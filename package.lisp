@@ -17,7 +17,13 @@
             #:colours-of
             #:uvs-of
             #:*textures*
-            #:*meshes*))
+            #:*meshes*
+            #:*compiled-meshes*
+            #:compile-mesh
+            #:compiled-mesh
+            #:element-count-of
+            #:triangle-buffer-of
+            #:vertex-buffer-of))
 
 (in-package :mixamesh)
 

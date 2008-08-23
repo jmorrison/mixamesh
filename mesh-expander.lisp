@@ -6,8 +6,12 @@
 (defparameter *meshes* (make-hash-table :test 'eq)
   "A table of meshes.")
 
+(defparameter *compiled-meshes* (make-hash-table :test 'eq)
+  "A table of compiled meshes")
+
 (defparameter *textures* (make-hash-table :test 'eq)
   "A table of textures.")
+
 
 
 ;; base mesh class type --------------------
