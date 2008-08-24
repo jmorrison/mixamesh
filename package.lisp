@@ -7,6 +7,7 @@
             #:face-array
             #:base-mesh
             #:simple-mesh
+            #:make-mesh
             #:mesh
             #:textured-mesh
             #:coloured-mesh            
@@ -15,9 +16,14 @@
             #:vertices-of
             #:colours-of
             #:uvs-of
-            #:render
             #:*textures*
-            #:*meshes*))
+            #:*meshes*
+            #:*compiled-meshes*
+            #:compile-mesh
+            #:compiled-mesh
+            #:element-count-of
+            #:triangle-buffer-of
+            #:vertex-buffer-of))
 
 (in-package :mixamesh)
 

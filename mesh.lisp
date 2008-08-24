@@ -1,13 +1,6 @@
 (in-package :mixamesh)
 
 
-;; -- keep track of every mesh instance ----------------------------------
-
-(defparameter *meshes* (make-hash-table :test 'equalp)
-  "A table of meshes.")
-
-(unless (find-package :mesh-names)
-  (make-package :mesh-names))
 
 ;; -- define a few common types of mesh for luck --------------------------
 
@@ -151,24 +144,18 @@
                 (vertex3d* (* x scale) (* y scale) (* z scale) w)))))))
 
 
+;; compiled mesh -- defined elsehwhere
+(defclass compiled-mesh ()
+  ((vertex-buffer :initform 0 :type (unsigned-byte 32) :reader vertex-buffer-of)
+   (triangle-buffer :initform 0 :type (unsigned-byte 32) :reader triangle-buffer-of)
+   (element-count :initform 0 :type fixnum :reader element-count-of)))
+
+
 (defgeneric stripify (mesh))
 
 (defmethod stripify ((self mesh))
   "Stripify mesh")
 
 
-
-;; empty base class to specialise on
-(defclass compiled-mesh ()
-  ())
-
-
-;; (defmethod decompilation ((self compiled-mesh))
-;;   "Create a modifiable mesh from a compiled mesh")
-
-(defmethod mesh-compile ((self mesh) &rest args)
-  "Given a mesh return a compiled mesh, which is a non-modifiable mesh optimised for rendering in foreign memory."
-  (declare (ignorable args))
-  )
 
 
