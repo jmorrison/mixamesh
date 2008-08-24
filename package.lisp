@@ -23,7 +23,9 @@
             #:compiled-mesh
             #:element-count-of
             #:triangle-buffer-of
-            #:vertex-buffer-of))
+            #:vertex-buffer-of
+            #:*bounding-boxes*
+            #:box-of))
 
 (in-package :mixamesh)
 
