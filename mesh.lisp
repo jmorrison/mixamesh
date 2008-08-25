@@ -1,7 +1,5 @@
 (in-package :mixamesh)
 
-
-
 ;; -- define a few common types of mesh for luck --------------------------
 
 ;; abstract base mesh 
@@ -92,7 +90,7 @@
 
 (defgeneric box-of (mesh))
 
-(defmethod box-of ((self mesh))
+(defmethod box-of ((self simple-mesh))
   "Return a bounding box for the mesh."
   (let ((maxx most-negative-single-float)
         (minx most-positive-single-float)
@@ -101,18 +99,20 @@
         (maxz most-negative-single-float)
         (minz most-positive-single-float))
     (iterate
-      (for index index-of-vertex (vertices-of self))      
-      (with-vertex3d    
-          (vertex3d-aref (vertices-of self) index)
-          (x y z w)
-        (cond
-          ((< x minx) (setf minx x))
-          ((> x maxx) (setf maxx x))
-          ((< y miny) (setf miny y))
-          ((> y maxy) (setf maxy y))
-          ((< z minz) (setf minz z))
-          ((< z minz) (setf minz z)))))
-    (values minx maxx miny maxy minz maxz)))
+      (for (values x y z w) in-vertices (vertices-of self))      
+      (cond
+        ((< x minx) (setf minx x))
+        ((> x maxx) (setf maxx x))
+        ((< y miny) (setf miny y))
+        ((> y maxy) (setf maxy y))
+        ((< z minz) (setf minz z))
+        ((> z maxz) (setf maxz z))))
+    (make-aabb* minx maxx miny maxy minz maxz)))
+
+(defun bound-mesh (mesh)
+  (setf (gethash mesh *bounding-boxes*) (box-of (gethash mesh *meshes*))))
+
+;; squeeze into unit bounds (for brushes?) ---------------------------------
 
 (defgeneric normalize-scale (mesh))
 

@@ -9,6 +9,9 @@
 (defparameter *compiled-meshes* (make-hash-table :test 'eq)
   "A table of compiled meshes")
 
+(defparameter *bounding-boxes* (make-hash-table :test 'eq)
+  "A table of mesh bounding boxes")
+
 (defparameter *textures* (make-hash-table :test 'eq)
   "A table of textures.")
 
@@ -52,8 +55,9 @@
          (make-instance mesh-type))
         (result
          (id-of mesh)))
-    (incf (id-of mesh))
+    (incf (id-of mesh))    
     result))
+
 
 ;; expanders for individual aspects of a mesh --------------------
 
