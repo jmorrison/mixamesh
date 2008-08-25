@@ -25,6 +25,7 @@
             #:triangle-buffer-of
             #:vertex-buffer-of
             #:*bounding-boxes*
+            #:bound-mesh
             #:box-of))
 
 (in-package :mixamesh)
