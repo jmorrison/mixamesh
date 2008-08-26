@@ -3,13 +3,13 @@
 
 ;; -- keep track of every mesh instance ----------------------------------
 
-(defparameter *meshes* (make-hash-table :test 'eq)
+(defparameter *meshes* (make-hash-table :test 'eql)
   "A table of meshes.")
 
-(defparameter *compiled-meshes* (make-hash-table :test 'eq)
+(defparameter *compiled-meshes* (make-hash-table :test 'eql)
   "A table of compiled meshes")
 
-(defparameter *bounding-boxes* (make-hash-table :test 'eq)
+(defparameter *bounding-boxes* (make-hash-table :test 'eql)
   "A table of mesh bounding boxes")
 
 

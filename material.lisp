@@ -1,7 +1,7 @@
 
 (in-package :mixamesh)
 
-(defparameter *textures* (make-hash-table :test 'eq)
+(defparameter *textures* (make-hash-table :test 'eql)
   "A table of textures.")
 
 (defclass material ()
