@@ -12,10 +12,6 @@
 (defparameter *bounding-boxes* (make-hash-table :test 'eq)
   "A table of mesh bounding boxes")
 
-(defparameter *textures* (make-hash-table :test 'eq)
-  "A table of textures.")
-
-
 
 ;; base mesh class type --------------------
 
@@ -23,7 +19,7 @@
   ((face-array :accessor faces-of :initform (make-triangle-array 0 :adjustable t :fill-pointer 0) :type (vector (unsigned-byte 16) *))
    (current-face-index :accessor current-face-index-of :initform 0 :type fixnum)
    (current-vertex-index :accessor current-vertex-index-of :initform 0 :type fixnum)
-   (id :allocation :class :accessor id-of :initform (get-universal-time)))
+   (id :allocation :class :reader id-of :initform (get-universal-time)))
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Base class for all meshes"))
 
@@ -32,12 +28,11 @@
     (case op
       (:face-add (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
       (:face-set (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
-      (:face-clear (setf (faces-of mesh) (make-triangle-array data :ajustable t :fill-pointer 0))))))
+      (:face-clear (setf (faces-of mesh) (make-triangle-array data :adjustable t :fill-pointer 0))))))
 
 
 
 ;; mesh - building protocol --------------------
-
 
 
 ;; constructor 
@@ -55,7 +50,7 @@
          (make-instance mesh-type))
         (result
          (id-of mesh)))
-    (incf (id-of mesh))    
+    (incf (slot-value mesh 'id))    
     result))
 
 

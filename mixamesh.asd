@@ -13,7 +13,8 @@
   :components
   ((:file "package")
    (:file "mesh-expander")
-   (:file "mesh")))
+   (:file "mesh")
+   (:file "material")))
 
 (defsystem :mixamesh-tests
   :author "John Connors"
