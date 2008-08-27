@@ -144,10 +144,19 @@
                 (vertex3d* (* x scale) (* y scale) (* z scale) w)))))))
 
 
-;; compiled mesh -- defined elsehwhere
+;; to do -- this hierarchy should mirror the def-mesh hierarchy and
+;; be automatically expanded out by def-mesh
+
+;; compiled mesh -- methods defined elsehwhere
 (defclass compiled-mesh ()
   ((vertex-buffer :initform 0 :type (unsigned-byte 32) :reader vertex-buffer-of)
    (triangle-buffer :initform 0 :type (unsigned-byte 32) :reader triangle-buffer-of)
+   (element-count :initform 0 :type fixnum :reader element-count-of)))
+
+(defclass textured-compiled-mesh ()
+  ((vertex-buffer :initform 0 :type (unsigned-byte 32) :reader vertex-buffer-of)
+   (uv-buffer :initform 0 :type (unsigned-byte 32) :reader uv-buffer-of)
+   (texture :accessor texture-of)
    (element-count :initform 0 :type fixnum :reader element-count-of)))
 
 

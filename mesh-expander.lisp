@@ -3,18 +3,14 @@
 
 ;; -- keep track of every mesh instance ----------------------------------
 
-(defparameter *meshes* (make-hash-table :test 'eq)
+(defparameter *meshes* (make-hash-table :test 'eql)
   "A table of meshes.")
 
-(defparameter *compiled-meshes* (make-hash-table :test 'eq)
+(defparameter *compiled-meshes* (make-hash-table :test 'eql)
   "A table of compiled meshes")
 
-(defparameter *bounding-boxes* (make-hash-table :test 'eq)
+(defparameter *bounding-boxes* (make-hash-table :test 'eql)
   "A table of mesh bounding boxes")
-
-(defparameter *textures* (make-hash-table :test 'eq)
-  "A table of textures.")
-
 
 
 ;; base mesh class type --------------------
@@ -23,21 +19,26 @@
   ((face-array :accessor faces-of :initform (make-triangle-array 0 :adjustable t :fill-pointer 0) :type (vector (unsigned-byte 16) *))
    (current-face-index :accessor current-face-index-of :initform 0 :type fixnum)
    (current-vertex-index :accessor current-vertex-index-of :initform 0 :type fixnum)
-   (id :allocation :class :accessor id-of :initform (get-universal-time)))
+   (id :allocation :class :reader id-of :initform (get-universal-time)))
   (:metaclass closer-mop:funcallable-standard-class)
   (:documentation "Base class for all meshes"))
 
 (defgeneric mesh-builder (mesh op &optional data) 
   (:method  ((mesh base-mesh) op &optional data)
     (case op
+<<<<<<< HEAD:mesh-expander.lisp
       (:add-face (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
       (:set-face (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
       (:clear-face (setf (faces-of mesh) (make-triangle-array data :ajustable t :fill-pointer 0))))))
+=======
+      (:face-add (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
+      (:face-set (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
+      (:face-clear (setf (faces-of mesh) (make-triangle-array data :adjustable t :fill-pointer 0))))))
+>>>>>>> b5f3c498389a3866bde663416b82d00cdb9a1756:mesh-expander.lisp
 
 
 
 ;; mesh - building protocol --------------------
-
 
 
 ;; constructor 
@@ -55,7 +56,7 @@
          (make-instance mesh-type))
         (result
          (id-of mesh)))
-    (incf (id-of mesh))    
+    (incf (slot-value mesh 'id))    
     result))
 
 
