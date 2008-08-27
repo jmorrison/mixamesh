@@ -26,15 +26,9 @@
 (defgeneric mesh-builder (mesh op &optional data) 
   (:method  ((mesh base-mesh) op &optional data)
     (case op
-<<<<<<< HEAD:mesh-expander.lisp
       (:add-face (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
       (:set-face (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
       (:clear-face (setf (faces-of mesh) (make-triangle-array data :ajustable t :fill-pointer 0))))))
-=======
-      (:face-add (triangle-vector-push-extend (triangle data) (faces-of mesh)) (triangle-array-dimensions (faces-of mesh)))
-      (:face-set (setf (triangle-aref (faces-of mesh)  (the fixnum (current-face-index-of mesh))) (triangle data)))
-      (:face-clear (setf (faces-of mesh) (make-triangle-array data :adjustable t :fill-pointer 0))))))
->>>>>>> b5f3c498389a3866bde663416b82d00cdb9a1756:mesh-expander.lisp
 
 
 
