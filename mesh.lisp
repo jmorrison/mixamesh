@@ -156,7 +156,7 @@
 (defclass textured-compiled-mesh ()
   ((vertex-buffer :initform 0 :type (unsigned-byte 32) :reader vertex-buffer-of)
    (uv-buffer :initform 0 :type (unsigned-byte 32) :reader uv-buffer-of)
-   (texture :accessor texture-of)
+   (texture :accessor texture-of :initform nil)
    (element-count :initform 0 :type fixnum :reader element-count-of)))
 
 
